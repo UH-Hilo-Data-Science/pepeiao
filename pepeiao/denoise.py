@@ -11,9 +11,24 @@ import pywt
 _LOGGER = logging.getLogger(__name__)
 
 
-def best_level():
-    pass
+# def best_level(samples, wavelet, maxlevel):
+#     wpt = pywt.WaveletPacket(data=samples, wavelet=wavelet, maxlevel=maxlevel)
+#     return _foo(wpt)
 
+
+# def _foo(node, entropy=None):
+#     _LOGGER.info('Checking entropy of node %s %s', node.level, node.node_name)
+#     _LOGGER.info(node.decompose())
+#     entropy = entropy or shannon(node.data)
+#     child_entropy = [shannon(x.data) for x in node.decompose()]
+#     _LOGGER.info(entropy)
+#     if max(child_entropy) > entropy:
+#         return node.level
+#     try:
+#         return min(_foo(x, max(child_entropy)) for x in node.decompose())
+#     except ValueError:
+#         return node.level
+    
 def denoise(samples, wavelet, level, scale):
     """Denoise based on wavelets. See wp_denoise for more info."""
 
@@ -31,7 +46,7 @@ def wp_denoise(samples, wavelet, level, scale):
     'Birdsong Denoising Using Wavelets' PLOS One (2016) 
     https://doi.org/10.1371/journal.pone.0146790
 """
-    
+    _LOGGER.info('Doing wavelet packet denoising.')
     wpt = pywt.WaveletPacket(data=samples, wavelet=wavelet, maxlevel=level)
     threshold = np.percentile(np.abs(wpt['d'].data), scale)
     wpt.walk(_threshold, kwargs=dict(value=threshold, mode='garotte'))
@@ -64,8 +79,7 @@ def shannon(samples):
     x = samples ** 2
     value = -((x * np.nan_to_num(np.log(x))).sum())
     _LOGGER.info('Shannon entropy: %s', value)
-    return 
-    
+    return value
     
 def _make_parser():
     parser = argparse.ArgumentParser()
@@ -74,9 +88,8 @@ def _make_parser():
 
 def _main(args):
     samples, samp_rate = librosa.load(args.file, sr=None)
-    _LOGGER.info('Read samples from %s, sampling rate: %s Hz', args.file, samp_rate)
-    _LOGGER.info('Samples object shape: %s', samples.shape)
-    
+    _LOGGER.info('Read samples %d from %s, at sampling rate: %s Hz', samples.size, args.file, samp_rate)
+
     denoised_samples = wp_denoise(samples, wavelet='dmey', level=6, scale=99.9)
     
     write_spectrogram(samples, 'orig.png')
