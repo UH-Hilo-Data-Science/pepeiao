@@ -1,6 +1,8 @@
 import collections
 import csv
 import logging
+import pkg_resources
+
 
 from pepeiao.constants import _BEGIN_KEY, _END_KEY, _RAVEN_HEADER
 
@@ -13,7 +15,7 @@ def in_interval(time, interval):
 def load_selections(filename):
     """Parse a raven selections table and return a list of dictionaries"""
     with open(filename) as csvfile:
-        reader = InsensitiveReader(csvfile, fieldnames=_RAVEN_HEADER, dialect='excel_tab')
+        reader = InsensitiveReader(csvfile, fieldnames=_RAVEN_HEADER, dialect='excel-tab')
         rows = [x for x in reader]
     _LOGGER.info('Read %d selections from %s.', len(rows), filename)
     return rows
@@ -45,7 +47,7 @@ def intervals_to_selections(intervals):
     pass
 
 
-def InsensitiveReader(csv.DictReader):
+class InsensitiveReader(csv.DictReader):
     """A csv.DictReader that ignores captialization of field names."""
     @property
     def fieldnames(self):
@@ -55,14 +57,29 @@ def InsensitiveReader(csv.DictReader):
         return InsensitiveDict(super().__next__())
 
     
-def InsensitiveDict(colletions.OrderedDict):
+class InsensitiveDict(collections.OrderedDict):
     """Case insensitive OrderedDict"""
 
     def __getitem__(self, key):
         return super().__getitem__(key.strip().lower())
 
-    def __setitem__(self, key):
-        return super().__setitem__(key.strip().lower(), value)
+    def __setitem__(self, key, value):
+        try:
+            key = key.strip().lower()
+        except AttributeError:
+            pass
+        return super().__setitem__(key, value)
 
     def get(self, key, default=None):
         return super().get(key.strip().lower(), default)
+
+
+def get_models():
+    models = dict()
+    for entry_point in pkg_resources.iter_entry_points('pepeiao_models'):
+        new_models = entry_point.load()
+        both = [k for k in new_models if k in models]
+        if both:
+            _LOGGER.warn('Pepeiao loading a model with identical name(s): %s'.format(both))
+        models.update(new_models)
+    return  models

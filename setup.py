@@ -17,6 +17,7 @@ setup(
         ],
     entry_points={
         'console_scripts':['pepeiao = pepeiao.__main__:_main'],
-        'pepeiao_models':['conv = pepeiao.models:convolution']
+        # 'pepeiao_models':['conv = pepeiao.models:convolution'],
+        'pepeiao_models':['builtin =  pepeiao.models:MODELS'],
         }
 )

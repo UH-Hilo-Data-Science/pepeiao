@@ -1,4 +1,6 @@
+import argparse
 import logging
+import pickle
 import random
 
 import librosa
@@ -32,9 +34,14 @@ class Feature():
         
 
 class Spectrogram(Feature):
-    def __init__(self, filename):
-        super().__init__(self)
+    def __init__(self, filename, selection_file=None):
+        super().__init__()
         self.read_wav(filename)
+        if selection_file:
+            selections = util.load_selections(selection_file)
+            self.selections_to_labels(selections)
+        _LOGGER.info('Spectrogram finished initialization.')
+
 
     def data_windows(self):
         """Generate the sequence of data windows."""
@@ -54,7 +61,7 @@ class Spectrogram(Feature):
             yield (self._get_window(idx), self._get_label(idx))
 
     def _get_window(self, index):
-        return self._data[:, index:(index.self.width)]
+        return self._data[:, index:(index+self.width)]
 
     def _get_label(self, index, percentile=75):
         return np.percentile(self.labels[index:(index+self.width)], percentile)
@@ -119,5 +126,44 @@ class Spectrogram(Feature):
     def intervals(self, value):
         """Set the labels from a list of time intervals."""
         self.labels = np.array([any(util.in_interval(t, s) for s in value) for t in self.times], dtype=np.float)
+        
+
+def load_feature(filename):
+    try:
+        with open(filename, 'rb') as featfile:
+            result = pickle.load(featfile)
+    except IOError:
+        _LOGGER.error('Failed to read feature file.')
+        raise
+    if not issubclass(result, Feature):
+        raise ValueError('Loaded object is not a Feature')
+    return result
+        
+def _make_parser():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-o', '--output', type=argparse.FileType('wb'))
+    parser.add_argument('wav')
+    parser.add_argument('selections', nargs='?')
+    return parser
+        
+if __name__ == '__main__':
+    parser = _make_parser()
+    args = parser.parse_args()
+    logging.basicConfig(level=logging.INFO)
+    
+    feature = Spectrogram(args.wav)
+    
+    if args.selections:
+        selections = pepeiao.util.load_selections(args.selections)
+        feature.selections_to_labels(selections)
+    if args.output:
+        try:
+            pickle.dump(feature, args.output)
+            print('Wrote feature to', args.output.name)
+        except IOError as e:
+            _LOGGER.error(e)
+            
+
+        
         
     

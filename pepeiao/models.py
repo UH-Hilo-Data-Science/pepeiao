@@ -1,13 +1,7 @@
 from keras import (layers, models, regularizers)
 import keras.backend as kb
 
-import birdsong.features
-
-MODELS = dict(
-    conv = dict(model = conv_model, filepath = 'data/conv.h5', feature = birdsong.features.Spectrogram),
-    bulbul = dict(model = bulbul, filepath = 'data/bulbul.h5', feature = birdsong.features.Spectrogram),
-    gru = dict(model = gru_model, filepath = 'data/gru.h5', feature = birdsong.features.Spectrogram),
-    )
+import pepeiao.feature
     
 
 def _prob_bird(y_true, y_pred):
@@ -82,3 +76,10 @@ def bulbul(input_shape):
                   loss = 'binary_crossentropy',
                   metrics = ['binary_accuracy', _prob_bird])
     return model 
+
+
+MODELS = dict(
+    conv = dict(model = conv_model, filepath = 'data/conv.h5', feature = pepeiao.feature.Spectrogram),
+    bulbul = dict(model = bulbul, filepath = 'data/bulbul.h5', feature = pepeiao.feature.Spectrogram),
+    gru = dict(model = gru_model, filepath = 'data/gru.h5', feature = pepeiao.feature.Spectrogram),
+    )
