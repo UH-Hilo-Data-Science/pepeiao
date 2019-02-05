@@ -10,6 +10,8 @@ _LOGGER = logging.getLogger(__name__)
 
 def in_interval(time, interval):
     """Is time in interval (start, end)?"""
+    if interval[0] > interval[1]:
+        raise ValueError("Interval start is not before end.")
     return (time >= interval[0]) and (time <= interval[1])
 
 def load_selections(filename):

@@ -3,6 +3,7 @@ import concurrent.futures
 import csv
 import itertools
 import logging
+import random
 
 import pepeiao.util
 
@@ -19,8 +20,13 @@ def _make_parser():
     return parser
 
 
-def data_generator(train_list, width, offset):
+def data_generator(train_list, width, offset, desired_prop_ones=None):
     """Generate data by asynchronously processing wav files into spectrograms."""
+    count_total = 0
+    count_ones = 0
+    keep_prob = 1.0
+    keep = True
+    
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
         train_list = itertools.cycle(train_list)
         current_feature = executor.submit(pepeiao.feature.Spectrogram, *next(train_list))
@@ -29,7 +35,27 @@ def data_generator(train_list, width, offset):
                                           wav_file, selection_file)
             current_spectrogram = current_feature.result()
             current_spectrogram.set_windowing(width, offset)
-            yield from current_spectrogram.shuffled_windows()
+            
+            if desired_prop_ones is None:
+                yield from current_spectrogram.shuffled_windows()
+            else:
+                for window, label in current_spectrogram.shuffled_windows():
+                    if label >= 0.5:
+                        keep = True
+                        count_ones += 1
+                    else:
+                        keep = random.random() < keep_prob:
+                    if keep:
+                        count_total += 1
+                        yield (window, label)
+
+                    current_prop_ones = count_ones / count_total
+                    if abs(desired_prop_ones - current_prop_ones) > 0.05:
+                        if current_prop_ones - desired_prop_ones > 0.05:
+                            keep_prob = min(keep_prob + 0.05, 1.0)
+                        elif current_prop_ones - desired_prop_ones < -0.05:
+                            keep_prob = max(0.0, keep_prob - 0.05)
+                            
             current_feature = next_future
             
             
