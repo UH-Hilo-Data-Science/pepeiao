@@ -154,7 +154,7 @@ if __name__ == '__main__':
     feature = Spectrogram(args.wav)
     
     if args.selections:
-        selections = pepeiao.util.load_selections(args.selections)
+        selections = util.load_selections(args.selections)
         feature.selections_to_labels(selections)
     if args.output:
         try:
