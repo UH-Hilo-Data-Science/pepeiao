@@ -89,7 +89,6 @@ def data_generator(feature_list, width, offset, batch_size=100, desired_prop_one
                         keep_prob = max(keep_prob - 0.05 , 0.0)
 
 
-                        
 def grouper(iterable, n, fillvalue=None):
     'Collect data into fixed-length chunks or blocks (from itertools recipes)'
     # grouper('ABCDEFG', 3, 'x') --> ABC DEF Gxx"
