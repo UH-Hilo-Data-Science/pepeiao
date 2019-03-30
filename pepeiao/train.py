@@ -5,6 +5,9 @@ import itertools
 import logging
 import random
 
+import numpy as np
+import keras.callbacks
+
 import pepeiao.util
 
 _LOGGER = logging.getLogger(__name__)
@@ -27,48 +30,66 @@ def _make_parser():
     return parser
 
 
-def data_generator(train_list, width, offset, desired_prop_ones=None):
-    """Generate data by asynchronously processing wav files into spectrograms."""
+def data_generator(feature_list, width, offset, batch_size=100, desired_prop_ones=None):
     count_total = 0
     count_ones = 0
     keep_prob = 1.0
+    result_idx = 0
     keep = True
-
+    windows = None
+    labels = None
     if desired_prop_ones and (desired_prop_ones < 0 or desired_prop_ones > 1):
         raise ValueError('desired proportion of ones is not a valid proportion.')
 
-    
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
-        train_list = itertools.cycle(train_list)
-        current_feature = executor.submit(pepeiao.feature.Spectrogram, *next(train_list))
-        for wav_file, selection_file in train_list:
-            next_future = executor.submit(pepeiao.feature.Spectrogram,
-                                          wav_file, selection_file)
-            current_spectrogram = current_feature.result()
-            current_spectrogram.set_windowing(width, offset)
-            
+        train_list = itertools.cycle(feature_list)
+        current_future = executor.submit(pepeiao.feature.load_feature, next(train_list))
+        for feat_file in train_list:
+            next_future = executor.submit(pepeiao.feature.load_feature, feat_file)
+            current_feature = current_future.result()
+            current_feature.set_windowing(width, offset)
+            _LOGGER.info('Loaded feature %s.', current_feature.file_name)
+            current_future = next_future
+
+            if windows is None:  # initilize result arrays on first iteration
+                shape = current_feature._get_window(0).shape
+                windows = np.empty((batch_size, *shape), dtype=float)
+                labels = np.empty(batch_size, dtype=float)
+
+            ## take items from the feature and put them into the arrays until full then yield arrays
             if desired_prop_ones is None:
-                yield from current_spectrogram.shuffled_windows()
-            else:
-                for window, label in current_spectrogram.shuffled_windows():
-                    if label >= 0.5:
+                for wind, lab in current_feature.shuffled_windows():
+                    windows[result_idx] = wind
+                    labels[result_idx] = lab
+                    result_idx += 1
+                    if (result_idx % batch_size) == 0:
+                        result_idx = 0
+                        yield windows, labels
+            else: # keep track of proportion of ones
+                for wind, lab in current_feature.shuffled_windows():
+                    if lab >= 0.5:
                         keep = True
                         count_ones += 1
                     else:
                         keep = random.random() < keep_prob
                     if keep:
                         count_total += 1
-                        yield (window, label)
+                        windows[result_idx] = wind
+                        labels[result_idx] = lab
+                        result_idx += 1
+
+                        if (result_idx % batch_size) == 0:
+                            result_idx = 0
+                            yield windows, labels
 
                     current_prop_ones = count_ones / count_total
-                    if abs(desired_prop_ones - current_prop_ones) > 0.05:
-                        if current_prop_ones - desired_prop_ones > 0.05:
-                            keep_prob = min(keep_prob + 0.05, 1.0)
-                        elif current_prop_ones - desired_prop_ones < -0.05:
-                            keep_prob = max(0.0, keep_prob - 0.05)
-                            
-            current_feature = next_future
+                    if (current_prop_ones - desired_prop_ones) > 0.05:
+                        keep_prob = min(keep_prob + 0.05, 1.0)
+                    elif (current_prop_ones - desired_prop_ones) < 0.05:
+                        keep_prob = max(keep_prob - 0.05 , 0.0)
 
+
+                        
 def grouper(iterable, n, fillvalue=None):
     'Collect data into fixed-length chunks or blocks (from itertools recipes)'
     # grouper('ABCDEFG', 3, 'x') --> ABC DEF Gxx"
@@ -85,7 +106,7 @@ def _main():
 
     if args.num_validation >= 1.0:
         if args.num_validation > len(training_list):
-            raise ValueEror('--num-validation argument is greater than the number of available files')
+            raise ValueError('--num-validation argument is greater than the number of available files')
         n_valid = int(args.num_validation)
     elif args.num_validation >= 0.0:
         n_valid = int(args.num_validation * len(training_list))
@@ -93,7 +114,7 @@ def _main():
         raise ValueError('--num-validation argument is not positive')
 
     if n_valid > 0.3 * len(training_list):
-        _LOGGER.warn('Using more than 30% of files as validation data.')
+        _LOGGER.warning('Using more than 30% of files as validation data.')
 
     training_set = grouper(
         data_generator(training_list[:-n_valid], args.width, args.offset, args.proportion_ones),
@@ -107,7 +128,7 @@ def _main():
 
     input_shape = next(training_set)[0].shape[1:]
     
-    model = model_description[model](input_shape)
+    model = model_description['model'](input_shape)
     
     history = model.fit_generator(
         training_set,
@@ -117,7 +138,7 @@ def _main():
         verbose=1, #0-silent, 1-progessbar, 2-1line
         validation_data=validation_set,
         validation_steps=200,
-        callbacks=[EarlyStopping(patience=5)],
+        callbacks=[keras.callbacks.EarlyStopping(patience=5)],
     )
     
     model.save(args.output)

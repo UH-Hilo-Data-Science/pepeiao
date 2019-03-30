@@ -156,7 +156,7 @@ if __name__ == '__main__':
     if args.selections:
         selections = util.load_selections(args.selections)
         feature.selections_to_labels(selections)
-        logging.info('Feature data nbytes:', feature._data.nbytes)
+        _LOGGER.info('Feature data nbytes: %f', feature._data.nbytes)
     if args.output:
         try:
             pickle.dump(feature, args.output)

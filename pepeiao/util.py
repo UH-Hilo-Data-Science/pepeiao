@@ -84,4 +84,4 @@ def get_models():
         if both:
             _LOGGER.warn('Pepeiao loading a model with identical name(s): %s'.format(both))
         models.update(new_models)
-    return  models
+    return models
