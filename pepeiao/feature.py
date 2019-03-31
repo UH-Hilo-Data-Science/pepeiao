@@ -138,7 +138,7 @@ def load_feature(filename):
     except IOError:
         _LOGGER.error('Failed to read feature file.')
         raise
-    if not issubclass(result, Feature):
+    if not isinstance(result, Feature):
         raise ValueError('Loaded object is not a Feature')
     return result
 

@@ -8,6 +8,7 @@ import random
 import numpy as np
 import keras.callbacks
 
+from pepeiao.feature import Spectrogram
 import pepeiao.util
 
 _LOGGER = logging.getLogger(__name__)
@@ -53,13 +54,13 @@ def data_generator(feature_list, width, offset, batch_size=100, desired_prop_one
 
             if windows is None:  # initilize result arrays on first iteration
                 shape = current_feature._get_window(0).shape
-                windows = np.empty((batch_size, *shape), dtype=float)
+                windows = np.empty((batch_size, *reversed(shape)), dtype=float)
                 labels = np.empty(batch_size, dtype=float)
 
             ## take items from the feature and put them into the arrays until full then yield arrays
             if desired_prop_ones is None:
                 for wind, lab in current_feature.shuffled_windows():
-                    windows[result_idx] = wind
+                    windows[result_idx] = np.transpose(wind)
                     labels[result_idx] = lab
                     result_idx += 1
                     if (result_idx % batch_size) == 0:
@@ -74,7 +75,7 @@ def data_generator(feature_list, width, offset, batch_size=100, desired_prop_one
                         keep = random.random() < keep_prob
                     if keep:
                         count_total += 1
-                        windows[result_idx] = wind
+                        windows[result_idx] = np.transpose(wind)
                         labels[result_idx] = lab
                         result_idx += 1
 
