@@ -153,15 +153,15 @@ def _make_parser():
 def main(args):
     try:
         feature = Spectrogram(args.wav)
-    except FileNotFoundError as exc:
-        _LOGGER.error('Could not read %s', *exc.args)
+    except FileNotFoundError:
+        _LOGGER.error('Could not read %s', args.wav)
         return 1
 
     if args.selections:
         try:
             selections = util.load_selections(args.selections)
-        except FileNotFoundError as exc:
-            _LOGGER.error('Could not read %s', *exc.args)
+        except FileNotFoundError:
+            _LOGGER.error('Could not read %s', args.selections)
             return 1
 
         feature.selections_to_labels(selections)
