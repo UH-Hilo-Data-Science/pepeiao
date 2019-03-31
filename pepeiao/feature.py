@@ -84,7 +84,7 @@ class Spectrogram(Feature):
 
         self.file_name = filename
         self.samp_rate = _SAMP_RATE
-        self._data = librosa.stft(samples)
+        self._data = librosa.stft(samples).real
         self.times = librosa.frames_to_time(range(self._data.shape[1]), sr=self.samp_rate)
 
 
