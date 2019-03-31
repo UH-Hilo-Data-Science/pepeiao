@@ -24,7 +24,7 @@ def _make_parser():
     parser.add_argument('-b', '--batch-size', default=64, type=int,
                         help='Training batch size')
     parser.add_argument('model', choices=pepeiao.util.get_models())
-    parser.add_argument('feature', type=argparse.FileType('r'), nargs='+',
+    parser.add_argument('feature', nargs='+',
                         help='Preprocessed feature files for training')
     parser.add_argument('output', help='Filename for fitted model in (.h5)')
     return parser
