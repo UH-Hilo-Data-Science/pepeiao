@@ -24,8 +24,8 @@ def _make_parser():
     parser.add_argument('-b', '--batch-size', default=64, type=int,
                         help='Training batch size')
     parser.add_argument('model', choices=pepeiao.util.get_models())
-    parser.add_argument('description_file', type=argparse.FileType('r'),
-                        help='File describing training data. A tab-delimited file with two columns: wav_filename, selection_file')
+    parser.add_argument('feature', type=argparse.FileType('r'), nargs='+',
+                        help='Preprocessed feature files for training')
     parser.add_argument('output', help='Filename for fitted model in (.h5)')
     return parser
 
@@ -101,24 +101,23 @@ def _main():
 
     args = parser.parse_args()
     _LOGGER.debug(args)
-    training_list = list(csv.reader(args.description_file, delimiter='\t'))
 
     if args.num_validation >= 1.0:
-        if args.num_validation > len(training_list):
+        if args.num_validation > len(args.feature):
             raise ValueError('--num-validation argument is greater than the number of available files')
         n_valid = int(args.num_validation)
     elif args.num_validation >= 0.0:
-        n_valid = int(args.num_validation * len(training_list))
+        n_valid = int(args.num_validation * len(args.feature))
     else:
         raise ValueError('--num-validation argument is not positive')
 
-    if n_valid > 0.3 * len(training_list):
+    if n_valid > 0.3 * len(args.feature):
         _LOGGER.warning('Using more than 30% of files as validation data.')
 
-    training_set = data_generator(training_list[:-n_valid], args.width, args.offset,
+    training_set = data_generator(args.feature[:-n_valid], args.width, args.offset,
                                   args.batch_size, args.proportion_ones)
 
-    validation_set = data_generator(training_list[-n_valid:], args.width, args.offset,
+    validation_set = data_generator(args.feature[-n_valid:], args.width, args.offset,
                                     args.batch_size, args.proportion_ones)
 
     model_description = pepeiao.util.get_models()[args.model]
