@@ -19,23 +19,26 @@ class Feature():
 
     def label_windows(self):
         raise NotImplementedError
-    
+
     def windows(self):
         return zip(self.data_windows(), self.label_windows())
 
     def shuffled_windows(self):
         raise NotImplementedError
-    
+
     def infinite_shuffle(self):
         """Generate an infinite sequence of shuffled windows. Desk is exhausted before reshuffling."""
         while True:
             for x in self.shuffled_windows():
                 yield x
-        
+
 
 class Spectrogram(Feature):
     def __init__(self, filename, selection_file=None):
         super().__init__()
+        self.width = None
+        self.stride = None
+        self.labels = None
         self.read_wav(filename)
         if selection_file:
             selections = util.load_selections(selection_file)
@@ -65,16 +68,16 @@ class Spectrogram(Feature):
 
     def _get_label(self, index, percentile=75):
         return np.percentile(self.labels[index:(index+self.width)], percentile)
-        
+
     def read_wav(self, filename):
         """Read audio from file and compute spectrogram."""
         _LOGGER.info('Reading %s.', filename)
         samples, samp_rate = librosa.load(filename, sr=None)
 
         if samp_rate != _SAMP_RATE:
-            _LOGGER.warn('Resampling from %s to %s Hz.', samp_rate, _SAMP_RATE)
-            samples = librosa.core.resample(samples, self.sampling_rate, _SAMP_RATE)
-            
+            _LOGGER.warning('Resampling from %s to %s Hz.', samp_rate, _SAMP_RATE)
+            samples = librosa.core.resample(samples, samp_rate, _SAMP_RATE)
+
         samples = wp_denoise(samples, 'dmey', level=6, scale=99.9)
 
         _LOGGER.info('Computing STFT')
@@ -126,7 +129,7 @@ class Spectrogram(Feature):
     def intervals(self, value):
         """Set the labels from a list of time intervals."""
         self.labels = np.array([any(util.in_interval(t, s) for s in value) for t in self.times], dtype=np.float)
-        
+
 
 def load_feature(filename):
     try:
@@ -138,33 +141,44 @@ def load_feature(filename):
     if not issubclass(result, Feature):
         raise ValueError('Loaded object is not a Feature')
     return result
-        
+
 def _make_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('-o', '--output', type=argparse.FileType('wb'))
+    parser.add_argument('-v', '--verbose', action='store_true')
     parser.add_argument('wav')
     parser.add_argument('selections', nargs='?')
     return parser
-        
-if __name__ == '__main__':
-    parser = _make_parser()
-    args = parser.parse_args()
-    logging.basicConfig(level=logging.INFO)
-    
-    feature = Spectrogram(args.wav)
-    
+
+def main(args):
+    try:
+        feature = Spectrogram(args.wav)
+    except FileNotFoundError as exc:
+        _LOGGER.error('Could not read %s', *exc.args)
+        return 1
+
     if args.selections:
-        selections = util.load_selections(args.selections)
+        try:
+            selections = util.load_selections(args.selections)
+        except FileNotFoundError as exc:
+            _LOGGER.error('Could not read %s', *exc.args)
+            return 1
+
         feature.selections_to_labels(selections)
         _LOGGER.info('Feature data nbytes: %f', feature._data.nbytes)
+
     if args.output:
         try:
             pickle.dump(feature, args.output)
             print('Wrote feature to', args.output.name)
         except IOError as e:
             _LOGGER.error(e)
-            
+    return 0
 
-        
-        
-    
+if __name__ == '__main__':
+    import sys
+    parser = _make_parser()
+    args = parser.parse_args()
+    level = logging.DEBUG if args.verbose else logging.WARNING
+    logging.basicConfig(level=level)
+    sys.exit(main(args))
