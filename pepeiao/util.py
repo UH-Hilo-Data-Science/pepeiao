@@ -17,7 +17,7 @@ def in_interval(time, interval):
 def load_selections(filename):
     """Parse a raven selections table and return a list of dictionaries"""
     with open(filename) as csvfile:
-        reader = InsensitiveReader(csvfile, fieldnames=_RAVEN_HEADER, dialect='excel-tab')
+        reader = InsensitiveReader(csvfile, delimiter='\t')
         rows = [x for x in reader]
     _LOGGER.info('Read %d selections from %s.', len(rows), filename)
     return rows
@@ -43,7 +43,7 @@ def progress_dots(iterable, start=None, end=' Done.', char='.', stride=1):
 def selections_to_intervals(selections):
     """Extract (start, end) pairs from rows of a selection table."""
     return [(float(r[_BEGIN_KEY]), float(r[_END_KEY])) for r in selections
-                if all(k in r for k in (_BEGIN_KEY, _END_KEY))]
+                if all(k in r for k in (_BEGIN_KEY.lower(), _END_KEY.lower()))]
 
 def intervals_to_selections(intervals):
     pass

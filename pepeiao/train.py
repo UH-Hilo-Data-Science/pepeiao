@@ -60,6 +60,8 @@ def data_generator(feature_list, width, offset, batch_size=100, desired_prop_one
             ## take items from the feature and put them into the arrays until full then yield arrays
             if desired_prop_ones is None:
                 for wind, lab in current_feature.shuffled_windows():
+                    if tuple(reversed(wind.shape)) != windows.shape[1:]:
+                        continue
                     windows[result_idx] = np.transpose(wind)
                     labels[result_idx] = lab
                     result_idx += 1
@@ -68,6 +70,8 @@ def data_generator(feature_list, width, offset, batch_size=100, desired_prop_one
                         yield windows, labels
             else: # keep track of proportion of ones
                 for wind, lab in current_feature.shuffled_windows():
+                    if tuple(reversed(wind.shape)) != windows.shape[1:]:
+                        continue
                     if lab >= 0.5:
                         keep = True
                         count_ones += 1

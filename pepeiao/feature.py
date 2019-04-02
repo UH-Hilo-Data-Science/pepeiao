@@ -92,7 +92,8 @@ class Spectrogram(Feature):
         """Setup windowing process (argument values in seconds)."""
         self.width = librosa.time_to_frames(width, self.samp_rate)
         self.stride = librosa.time_to_frames(stride, self.samp_rate)
-
+        _LOGGER.info('Set width to %d columns', self.width)
+        _LOGGER.info('Set stride to %d columns', self.stride)
 
     def selections_to_labels(self, selections):
         """Set the labels from a list of selections."""
