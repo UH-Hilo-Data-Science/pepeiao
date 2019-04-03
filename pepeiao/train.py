@@ -102,9 +102,11 @@ def data_generator(feature_list, width, offset, batch_size=100, desired_prop_one
 
 def _main():
     parser = _make_parser()
-    logging.basicConfig(level=logging.INFO)
 
     args = parser.parse_args()
+
+    level = logging.WARNING if args.quiet else logging.INFO
+    logging.basicConfig(level=level)
     _LOGGER.debug(args)
 
     if args.num_validation >= 1.0:
@@ -131,17 +133,19 @@ def _main():
 
     model = model_description['model'](input_shape)
 
-    history = model.fit_generator(
-        training_set,
-        steps_per_epoch=200,
-        shuffle=False,
-        epochs=100,
-        verbose=1, #0-silent, 1-progessbar, 2-1line
-        validation_data=validation_set,
-        validation_steps=200,
-        callbacks=[keras.callbacks.EarlyStopping(patience=5)],
-    )
-
+    try:
+        history = model.fit_generator(
+            training_set,
+            steps_per_epoch=200,
+            shuffle=False,
+            epochs=100,
+            verbose=1, #0-silent, 1-progessbar, 2-1line
+            validation_data=validation_set,
+            validation_steps=5,
+            callbacks=[keras.callbacks.EarlyStopping(patience=5)],
+        )
+    except KeyboardInterrupt:
+        print('\nExiting on user request.')
     model.save(args.output)
 
 if __name__ == '__main__':
