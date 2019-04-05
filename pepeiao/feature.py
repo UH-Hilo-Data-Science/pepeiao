@@ -131,6 +131,10 @@ class Spectrogram(Feature):
         """Set the labels from a list of time intervals."""
         self.labels = np.array([any(util.in_interval(t, s) for s in value) for t in self.times], dtype=np.float)
 
+    def save(self, filename):
+        pickle.dump(self, filename)
+        print('Wrote feature to', filename)
+
 
 def load_feature(filename):
     try:

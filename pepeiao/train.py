@@ -1,12 +1,12 @@
 import argparse
 import concurrent.futures
-import csv
 import itertools
 import logging
 import random
 
 import numpy as np
 import keras.callbacks
+import keras.utils
 
 from pepeiao.feature import Spectrogram
 import pepeiao.util
@@ -29,6 +29,66 @@ def _make_parser():
                         help='Preprocessed feature files for training')
     parser.add_argument('output', help='Filename for fitted model in (.h5)')
     return parser
+
+class DataGenerator(keras.utils.Sequence):
+    def __init__(self, feature_list, width, offset, batch_size=128, desired_prop_ones=None):
+        self.feature_list = feature_list
+        self.width = width
+        self.offset = offset
+        self.batch_size = batch_size
+        self.desired_prop_ones = desired_prop_ones
+
+        self.count_total = 0
+        self.count_ones = 0
+        self.keep_prob = 1.0
+
+        feature = pepeiao.feature.load_feature(feature_list[0])
+        feature.set_windowing(width, offset)
+
+        self.shape = feature._get_window(0).shape
+
+
+    def __len__(self):
+        return 100  # 100 batches per epoch
+
+    def __getitem__(self, idx):
+        '''Generate batch idx'''
+
+        data = None
+        labels = None
+
+        data = np.empty((self.batch_size, *reversed(self.shape)), dtype=float)
+        labels = np.empty(self.batch_size, dtype=float)
+
+        feature_list = self.feature_list[:]
+        feature_list = itertools.cycle(random.shuffle(feature_list))
+
+        for filename in feature_list:
+            feature = pepeiao.feature.load_feature(filename)
+            feature.set_windowing(self.width, self.offset)
+            for wind, lab in feature.shuffled_windows():
+                if tuple(reversed(wind.shape)) != data.shape[1:]:
+                    continue
+                if lab > 0.5 or (self.desired_prop_ones is None):
+                    keep = True
+                    self.count_ones += 1
+                else:
+                    keep = random.random() < self.keep_prob
+                if keep:
+                    self.count_total += 1
+                    index = (self.count_total - 1) % self.batch_size
+                    data[index] = np.transpose(wind)
+                    labels[index] = lab
+                    if index + 1 == self.batch_size:
+                        current_prop_ones = self.count_ones / self.count_total
+                        if (current_prop_ones - self.desired_prop_ones) > 0.02:
+                            self.keep_prob = min(self.keep_prob + 0.05, 1.0)
+                        elif (current_prop_ones - self.desired_prop_ones) < 0.02:
+                            self.keep_prob = max(self.keep_prob - 0.05, 0.01)
+                        return data, labels
+
+    def __del__(self):
+        print('Generated {:d} windows, with {:.3%} true labels.'.format(self.count_total, self.count_ones/self.count_total))
 
 
 def data_generator(feature_list, width, offset, batch_size=100, desired_prop_ones=None):
@@ -141,7 +201,7 @@ def _main():
             epochs=100,
             verbose=1, #0-silent, 1-progessbar, 2-1line
             validation_data=validation_set,
-            validation_steps=5,
+            validation_steps=10,
             callbacks=[keras.callbacks.EarlyStopping(patience=5)],
         )
     except KeyboardInterrupt:
