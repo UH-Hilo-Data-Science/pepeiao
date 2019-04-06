@@ -154,7 +154,7 @@ class Spectrogram(Feature):
         print('found {} windows with birds'.format(sum(1 for x in window_labels if x>_LABEL_THRESHOLD)))
         new_labels = np.zeros_like(self.times)
         for idx, label in enumerate(window_labels):
-            start, end = idx*self.width, idx*self.width + self.stride
+            start, end = idx*self.stride, idx*self.stride+ self.width
             new_labels[start:end] = np.maximum(new_labels[start:end], label)
         if self.labels is not None:
             _LOGGING.info('Replacing labels vector with predictions')
