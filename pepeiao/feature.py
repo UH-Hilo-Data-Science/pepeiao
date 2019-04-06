@@ -131,9 +131,34 @@ class Spectrogram(Feature):
         """Set the labels from a list of time intervals."""
         self.labels = np.array([any(util.in_interval(t, s) for s in value) for t in self.times], dtype=np.float)
 
+    @property
+    def time_intervals(self):
+        intervals = [(self.times[start], self.times[end]) for start,end in self.intervals]
+        return intervals
+
     def save(self, filename):
+        """Pickle the feature and save to file."""
         pickle.dump(self, filename)
         print('Wrote feature to', filename)
+
+    def set_windowing_from_model(self, model):
+        self.width = model.layers[0].input_shape[1]
+        self.stride = self.width // 4
+        _LOGGER.info('Reset windowing to match model.')
+        
+    def predict(self, model):
+        """Predict the label vector using a fitted keras model."""
+        self.set_windowing_from_model(model)
+        windows = np.stack([x.transpose() for x in self.data_windows() if x.shape[1] == self.width])
+        window_labels = model.predict(windows)
+        print('found {} windows with birds'.format(sum(1 for x in window_labels if x>_LABEL_THRESHOLD)))
+        new_labels = np.zeros_like(self.times)
+        for idx, label in enumerate(window_labels):
+            start, end = idx*self.width, idx*self.width + self.stride
+            new_labels[start:end] = np.maximum(new_labels[start:end], label)
+        if self.labels is not None:
+            _LOGGING.info('Replacing labels vector with predictions')
+        self.labels = new_labels
 
 
 def load_feature(filename):
