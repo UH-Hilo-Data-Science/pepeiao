@@ -201,8 +201,8 @@ def _main():
             epochs=100,
             verbose=1, #0-silent, 1-progessbar, 2-1line
             validation_data=validation_set,
-            validation_steps=10,
-            callbacks=[keras.callbacks.EarlyStopping(patience=5)],
+            validation_steps=50,
+            callbacks=[keras.callbacks.EarlyStopping(patience=10)],
         )
     except KeyboardInterrupt:
         print('\nExiting on user request.')

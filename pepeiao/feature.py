@@ -39,6 +39,7 @@ class Spectrogram(Feature):
         self.width = None
         self.stride = None
         self.labels = None
+        self.old_labels = None
         self.read_wav(filename)
         if selection_file:
             selections = util.load_selections(selection_file)
@@ -146,20 +147,31 @@ class Spectrogram(Feature):
         self.stride = self.width // 4
         _LOGGER.info('Reset windowing to match model.')
         
-    def predict(self, model):
+    def predict(self, model, roc=None):
         """Predict the label vector using a fitted keras model."""
         self.set_windowing_from_model(model)
         windows = np.stack([x.transpose() for x in self.data_windows() if x.shape[1] == self.width])
         window_labels = model.predict(windows)
-        print('found {} windows with birds'.format(sum(1 for x in window_labels if x>_LABEL_THRESHOLD)))
+        _LOGGER.info('found {} windows with birds'.format(
+            sum(1 for x in window_labels if x>_LABEL_THRESHOLD)))
         new_labels = np.zeros_like(self.times)
+        count = np.zeros_like(self.times)
         for idx, label in enumerate(window_labels):
             start, end = idx*self.stride, idx*self.stride+ self.width
-            new_labels[start:end] = np.maximum(new_labels[start:end], label)
+            # new_labels[start:end] = np.maximum(new_labels[start:end], label)
+            new_labels[start:end] += label
+            count[start:end] += 1
+        np.divide(new_labels, count, out=new_labels, where=(count > 0))
         if self.labels is not None:
-            _LOGGING.info('Replacing labels vector with predictions')
+            _LOGGER.info('Replacing labels vector with predictions')
+            self.old_labels = self.labels
         self.labels = new_labels
 
+    def roc(self):
+        if self.labels is not None and self.old_labels is not None:
+            return zip(self.old_labels, self.labels)
+        else:
+            raise ValueError('Cannot return roc table without predicted and original labels')
 
 def load_feature(filename):
     try:
