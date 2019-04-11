@@ -113,16 +113,17 @@ def data_generator(feature_list, width, offset, batch_size=100, desired_prop_one
             current_future = next_future
 
             if windows is None:  # initilize result arrays on first iteration
-                shape = current_feature._get_window(0).shape
+                shape = list(current_feature._get_window(0).shape)
+                shape[0] = 418
                 windows = np.empty((batch_size, *shape), dtype=float)
                 labels = np.empty(batch_size, dtype=float)
 
             ## take items from the feature and put them into the arrays until full then yield arrays
             if desired_prop_ones is None:
                 for wind, lab in current_feature.shuffled_windows():
-                    if wind.shape != windows.shape[1:]:
+                    if wind.shape[1] != windows.shape[2]:
                         continue
-                    windows[result_idx] = wind
+                    windows[result_idx] = wind[47:465,]
                     labels[result_idx] = lab
                     result_idx += 1
                     if (result_idx % batch_size) == 0:
@@ -130,7 +131,7 @@ def data_generator(feature_list, width, offset, batch_size=100, desired_prop_one
                         yield windows, labels
             else: # keep track of proportion of ones
                 for wind, lab in current_feature.shuffled_windows():
-                    if wind.shape != windows.shape[1:]:
+                    if wind.shape[1] != windows.shape[2]:
                         continue
                     if lab >= 0.5:
                         keep = True
@@ -139,7 +140,7 @@ def data_generator(feature_list, width, offset, batch_size=100, desired_prop_one
                         keep = random.random() < keep_prob
                     if keep:
                         count_total += 1
-                        windows[result_idx] = wind
+                        windows[result_idx] = wind[47:465,]
                         labels[result_idx] = lab
                         result_idx += 1
 
