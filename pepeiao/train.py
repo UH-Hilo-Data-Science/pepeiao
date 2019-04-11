@@ -114,15 +114,15 @@ def data_generator(feature_list, width, offset, batch_size=100, desired_prop_one
 
             if windows is None:  # initilize result arrays on first iteration
                 shape = current_feature._get_window(0).shape
-                windows = np.empty((batch_size, *reversed(shape)), dtype=float)
+                windows = np.empty((batch_size, *shape), dtype=float)
                 labels = np.empty(batch_size, dtype=float)
 
             ## take items from the feature and put them into the arrays until full then yield arrays
             if desired_prop_ones is None:
                 for wind, lab in current_feature.shuffled_windows():
-                    if tuple(reversed(wind.shape)) != windows.shape[1:]:
+                    if wind.shape != windows.shape[1:]:
                         continue
-                    windows[result_idx] = np.transpose(wind)
+                    windows[result_idx] = wind
                     labels[result_idx] = lab
                     result_idx += 1
                     if (result_idx % batch_size) == 0:
@@ -130,7 +130,7 @@ def data_generator(feature_list, width, offset, batch_size=100, desired_prop_one
                         yield windows, labels
             else: # keep track of proportion of ones
                 for wind, lab in current_feature.shuffled_windows():
-                    if tuple(reversed(wind.shape)) != windows.shape[1:]:
+                    if wind.shape != windows.shape[1:]:
                         continue
                     if lab >= 0.5:
                         keep = True
@@ -139,7 +139,7 @@ def data_generator(feature_list, width, offset, batch_size=100, desired_prop_one
                         keep = random.random() < keep_prob
                     if keep:
                         count_total += 1
-                        windows[result_idx] = np.transpose(wind)
+                        windows[result_idx] = wind
                         labels[result_idx] = lab
                         result_idx += 1
 
