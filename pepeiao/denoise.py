@@ -3,7 +3,7 @@ import itertools
 import logging
 
 import librosa
-from matplotlib.cm import get_cmap
+# from matplotlib.cm import get_cmap
 import numpy as np
 from PIL import Image
 import pywt
@@ -59,20 +59,20 @@ def _threshold(node, *args, **kwargs):
     return True
 
 
-def write_spectrogram(samples, filename, colormap='viridis', gamma=1.0):
-    _LOGGER.info('Computing stft spectrogram.')
-    spectrogram = librosa.stft(samples)
-    arr = np.flipud(np.abs(spectrogram[:, :2000]))
-    arr -= arr.min()
-    arr *= (1/np.percentile(arr,99))
-    arr **= gamma
-    arr = get_cmap(colormap)(arr)
-    arr *= 255
-    try:
-        Image.fromarray(arr.astype('uint8')).save(filename)
-        _LOGGER.info('Wrote %s', filename)
-    except IOError:
-        _LOGGER.warn('Failed to write spectrogram image.')
+# def write_spectrogram(samples, filename, colormap='viridis', gamma=1.0):
+#     _LOGGER.info('Computing stft spectrogram.')
+#     spectrogram = librosa.stft(samples)
+#     arr = np.flipud(np.abs(spectrogram[:, :2000]))
+#     arr -= arr.min()
+#     arr *= (1/np.percentile(arr,99))
+#     arr **= gamma
+#     arr = get_cmap(colormap)(arr)
+#     arr *= 255
+#     try:
+#         Image.fromarray(arr.astype('uint8')).save(filename)
+#         _LOGGER.info('Wrote %s', filename)
+#     except IOError:
+#         _LOGGER.warn('Failed to write spectrogram image.')
 
     
 def shannon(samples):
@@ -92,8 +92,8 @@ def _main(args):
 
     denoised_samples = wp_denoise(samples, wavelet='dmey', level=6, scale=99.9)
     
-    write_spectrogram(samples, 'orig.png')
-    write_spectrogram(denoised_samples, 'denoised.png')
+    # write_spectrogram(samples, 'orig.png')
+    # write_spectrogram(denoised_samples, 'denoised.png')
     librosa.output.write_wav('denoised.wav', denoised_samples, sr=samp_rate)
     
 
