@@ -9,17 +9,19 @@ import re
 from pepeiao.constants import _RAVEN_HEADER, _SELECTION_KEY, _BEGIN_KEY, _END_KEY, _FILE_KEY
 import pepeiao.feature
 import pepeiao.models
+from pepeiao.parsers import predict_parser as _make_parser
 
 _LOGGER = logging.getLogger(__name__)
 
-def _make_parser():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('model', help="fitted model file")
-    parser.add_argument('-s', '--selections', default=None,
-                        help="look for selections table of same name and write roc data")
-    parser.add_argument('wav', nargs='+', help="wav files to predict on")
+# def _make_parser(parser=None):
+#     if parser is None:
+#         parser = argparse.ArgumentParser()
+#     parser.add_argument('model', help="fitted model file")
+#     parser.add_argument('-s', '--selections', default=None,
+#                         help="look for selections table of same name and write roc data")
+#     parser.add_argument('wav', nargs='+', help="wav files to predict on")
 
-    return parser
+#     return parser
 
 def predict(feature, model, out_stream=sys.stdout):
     feature.predict(model)

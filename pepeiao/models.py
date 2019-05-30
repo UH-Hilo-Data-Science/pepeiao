@@ -2,7 +2,6 @@ from keras import (layers, models, regularizers)
 import keras.backend as kb
 
 import pepeiao.feature
-    
 
 def _prob_bird(y_true, y_pred):
     return kb.mean(y_true)
@@ -78,8 +77,8 @@ def bulbul(input_shape):
     return model 
 
 
-MODELS = dict(
-    conv = dict(model = conv_model, filepath = 'data/conv.h5', feature = pepeiao.feature.Spectrogram),
-    bulbul = dict(model = bulbul, filepath = 'data/bulbul.h5', feature = pepeiao.feature.Spectrogram),
-    gru = dict(model = gru_model, filepath = 'data/gru.h5', feature = pepeiao.feature.Spectrogram),
-    )
+# MODELS = dict(
+#     conv = dict(model = conv_model, filepath = 'data/conv.h5', feature = pepeiao.feature.Spectrogram),
+#     bulbul = dict(model = bulbul, filepath = 'data/bulbul.h5', feature = pepeiao.feature.Spectrogram),
+#     gru = dict(model = gru_model, filepath = 'data/gru.h5', feature = pepeiao.feature.Spectrogram),
+#     )

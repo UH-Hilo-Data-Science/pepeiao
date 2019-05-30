@@ -76,6 +76,9 @@ class InsensitiveDict(collections.OrderedDict):
         return super().get(key.strip().lower(), default)
 
 
+def available_models():
+    return [ep.name for ep in pkg_resources.iter_entry_points('pepeiao_models')]
+
 def get_models():
     models = dict()
     for entry_point in pkg_resources.iter_entry_points('pepeiao_models'):
