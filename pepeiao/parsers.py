@@ -2,26 +2,28 @@ import argparse
 
 import pepeiao.util
 
-def feature_parser(parser=None):
+def make_feature_parser(parser=None):
     if parser is None:
         parser = argparse.ArgumentParser()
     parser.add_argument('-o', '--output', type=argparse.FileType('wb'))
     parser.add_argument('-v', '--verbose', action='store_true')
     parser.add_argument('wav')
     parser.add_argument('selections', nargs='?')
+    parser.set_defaults(func='feature')
     return parser
 
-def predict_parser(parser=None):
+def make_predict_parser(parser=None):
     if parser is None:
         parser = argparse.ArgumentParser()
     parser.add_argument('model', help="fitted model file")
     parser.add_argument('-s', '--selections', default=None,
                         help="look for selections table of same name and write roc data")
     parser.add_argument('wav', nargs='+', help="wav files to predict on")
+    parser.set_defaults(func='predict')
     return parser
 
 
-def train_parser(parser=None):
+def make_train_parser(parser=None):
     if parser is None:
         parser = argparse.ArgumentParser()
     parser.add_argument('-w', '--width', type=float, default=0.5)
@@ -37,4 +39,5 @@ def train_parser(parser=None):
     parser.add_argument('feature', nargs='+',
                         help='Preprocessed feature files for training')
     parser.add_argument('output', help='Filename for fitted model in (.h5)')
+    parser.set_defaults(func='train')
     return parser

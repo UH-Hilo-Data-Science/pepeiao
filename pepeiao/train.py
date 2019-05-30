@@ -9,7 +9,7 @@ import keras.callbacks
 import keras.utils
 
 from pepeiao.feature import Spectrogram
-from pepeiao.parsers import train_parser as _make_parser
+from pepeiao.parsers import make_train_parser as _make_parser
 import pepeiao.util
 
 _LOGGER = logging.getLogger(__name__)
@@ -163,13 +163,11 @@ def data_generator(feature_list, width, offset, batch_size=100, desired_prop_one
 #     args = [iter(iterable)] * n
 #     return itertools.zip_longest(*args, fillvalue=fillvalue)
 
-def _main():
-    parser = _make_parser()
-
-    args = parser.parse_args()
+def main(args):
 
     level = logging.WARNING if args.quiet else logging.INFO
-    logging.basicConfig(level=level)
+    
+    _LOGGER.setLevel(level)
     _LOGGER.debug(args)
 
     if args.num_validation >= 1.0:
@@ -212,4 +210,7 @@ def _main():
     model.save(args.output)
 
 if __name__ == '__main__':
-    _main()
+    logging.basicConfig()
+    parser = _make_parser()
+    args = parser.parse_args()
+    main(args)

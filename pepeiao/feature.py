@@ -8,7 +8,7 @@ import numpy as np
 
 from pepeiao.constants import _SAMP_RATE, _LABEL_THRESHOLD
 from pepeiao.denoise import wp_denoise
-from pepeiao.parsers import feature_parser as _make_parser
+from pepeiao.parsers import make_feature_parser as _make_parser
 import pepeiao.util as util
 
 _LOGGER = logging.getLogger(__name__)
@@ -185,21 +185,14 @@ def load_feature(filename):
         raise ValueError('Loaded object is not a Feature')
     return result
 
-# def _make_parser(parser=None):
-#     if parser is None:
-#         parser = argparse.ArgumentParser()
-#     parser.add_argument('-o', '--output', type=argparse.FileType('wb'))
-#     parser.add_argument('-v', '--verbose', action='store_true')
-#     parser.add_argument('wav')
-#     parser.add_argument('selections', nargs='?')
-#     return parser
-
 def main(args):
     try:
         feature = Spectrogram(args.wav)
-    except FileNotFoundError:
-        _LOGGER.error('Could not read %s', args.wav)
-        return 1
+    except:
+        raise
+    # except FileNotFoundError:
+    #     _LOGGER.error('Could not read %s', args.wav)
+    #     return 1
 
     if args.selections:
         try:
