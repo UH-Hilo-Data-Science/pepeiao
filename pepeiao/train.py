@@ -2,6 +2,7 @@ import argparse
 import concurrent.futures
 import itertools
 import logging
+import pkg_resources
 import random
 
 import numpy as np
@@ -188,11 +189,11 @@ def main(args):
     validation_set = data_generator(args.feature[-n_valid:], args.width, args.offset,
                                     args.batch_size, args.proportion_ones)
 
-    model_description = pepeiao.util.get_models()[args.model]
-
+    matching_models = list(pkg_resources.iter_entry_points('pepeiao_models', args.model))
+    if len(matching_models) > 1:
+        _LOGGER.warn('Multiple model objects match name %s', args.model)
     input_shape = next(training_set)[0].shape[1:]
-
-    model = model_description['model'](input_shape)
+    model = matching_models[0].load()(input_shape)
 
     try:
         history = model.fit_generator(
