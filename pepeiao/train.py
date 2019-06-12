@@ -93,6 +93,11 @@ class DataGenerator(keras.utils.Sequence):
     def __del__(self):
         print('Generated {:d} windows, with {:.3%} true labels.'.format(self.count_total, self.count_ones/self.count_total))
 
+def list_cycle(iterable):
+    lst = list(iterable)
+    while True:
+        yield from lst
+        _LOGGER.warn('\nExausted iterable. Restarting at beginning.\n')
 
 def data_generator(feature_list, width, offset, batch_size=100, desired_prop_ones=None):
     count_total = 0
@@ -106,8 +111,11 @@ def data_generator(feature_list, width, offset, batch_size=100, desired_prop_one
         raise ValueError('desired proportion of ones is not a valid proportion.')
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
-        train_list = itertools.cycle(feature_list)
+        
+        #train_list = itertools.cycle(feature_list)
+        train_list = list_cycle(feature_list)
         current_future = executor.submit(pepeiao.feature.load_feature, next(train_list))
+        #for feat_file in train_list:
         for feat_file in train_list:
             next_future = executor.submit(pepeiao.feature.load_feature, feat_file)
             current_feature = current_future.result()
@@ -166,10 +174,10 @@ def data_generator(feature_list, width, offset, batch_size=100, desired_prop_one
 
 def main(args):
 
-    level = logging.WARNING if args.quiet else logging.INFO
+    # level = logging.WARNING if args.quiet else logging.INFO
     
-    _LOGGER.setLevel(level)
-    _LOGGER.debug(args)
+    # _LOGGER.setLevel(level)
+    # _LOGGER.debug(args)
 
     if args.num_validation >= 1.0:
         if args.num_validation > len(args.feature):
@@ -198,17 +206,18 @@ def main(args):
     try:
         history = model.fit_generator(
             training_set,
-            steps_per_epoch=200,
+            steps_per_epoch=150,
             shuffle=False,
             epochs=100,
             verbose=1, #0-silent, 1-progessbar, 2-1line
             validation_data=validation_set,
-            validation_steps=50,
-            callbacks=[keras.callbacks.EarlyStopping(patience=10)],
+            validation_steps=100,
+            callbacks=[keras.callbacks.EarlyStopping(patience=6)],
         )
     except KeyboardInterrupt:
         print('\nExiting on user request.')
     model.save(args.output)
+    print('Wrote model to', args.output)
 
 if __name__ == '__main__':
     logging.basicConfig()

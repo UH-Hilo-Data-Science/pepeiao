@@ -144,7 +144,7 @@ class Spectrogram(Feature):
         print('Wrote feature to', filename)
 
     def set_windowing_from_model(self, model):
-        self.width = model.layers[0].input_shape[1]
+        self.width = model.layers[0].input_shape[2]
         self.stride = self.width // 4
         _LOGGER.info('Reset windowing to match model.')
         

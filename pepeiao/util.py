@@ -79,12 +79,12 @@ class InsensitiveDict(collections.OrderedDict):
 def available_models():
     return [ep.name for ep in pkg_resources.iter_entry_points('pepeiao_models')]
 
-def get_models():
-    models = dict()
-    for entry_point in pkg_resources.iter_entry_points('pepeiao_models'):
-        new_models = entry_point.load()
-        both = [k for k in new_models if k in models]
-        if both:
-            _LOGGER.warn('Pepeiao loading a model with identical name(s): %s'.format(both))
-        models.update(new_models)
-    return models
+# def get_models():
+#     models = dict()
+#     for entry_point in pkg_resources.iter_entry_points('pepeiao_models'):
+#         new_models = entry_point.load()
+#         both = [k for k in new_models if k in models]
+#         if both:
+#             _LOGGER.warn('Pepeiao loading a model with identical name(s): %s'.format(both))
+#         models.update(new_models)
+#     return models
