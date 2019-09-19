@@ -24,7 +24,11 @@ def predict(feature, model, out_stream=sys.stdout):
     
 def main(args):
     import keras.models
-    model = keras.models.load_model(args.model, custom_objects={'_prob_bird': pepeiao.models._prob_bird})
+    try:
+        model = keras.models.load_model(args.model, custom_objects={'_prob_bird': pepeiao.models._prob_bird})
+    except OSError as err:
+        print("Could not open model file %s".format(err.name))
+        return -1
     for filename in args.wav:
         feature = pepeiao.feature.Spectrogram(filename, args.selections)
         predict(feature, model)

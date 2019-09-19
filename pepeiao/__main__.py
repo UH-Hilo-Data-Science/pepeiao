@@ -4,6 +4,7 @@ import logging
 from pepeiao.parsers import make_feature_parser, make_predict_parser, make_train_parser
 
 LOGGER = logging.getLogger(__name__)
+logging.getLogger('tensorflow').setLevel(logging.ERROR)
 
 def make_parser():
     parser = argparse.ArgumentParser(description='A tool for using RAVEN selection tables with Keras.')
