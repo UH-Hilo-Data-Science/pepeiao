@@ -27,7 +27,7 @@ def main(args):
     try:
         model = keras.models.load_model(args.model, custom_objects={'_prob_bird': pepeiao.models._prob_bird})
     except OSError as err:
-        print("Could not open model file %s".format(err.name))
+        print("Failed to open model file: {}".format(args.model))
         return -1
     for filename in args.wav:
         feature = pepeiao.feature.Spectrogram(filename, args.selections)
