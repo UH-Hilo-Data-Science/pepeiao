@@ -1,5 +1,6 @@
 import argparse
 import logging
+from pathlib import Path
 import pickle
 import random
 
@@ -186,30 +187,31 @@ def load_feature(filename):
     return result
 
 def main(args):
-    try:
-        feature = Spectrogram(args.wav)
-    except:
-        raise
-    # except FileNotFoundError:
-    #     _LOGGER.error('Could not read %s', args.wav)
-    #     return 1
+    for wav in args.wav:
+        wavpath = Path(wav)
+        selpath = wavpath.with_suffix('.selections.txt')
+        outpath = wavpath.with_suffix('.feat')
+            
+        try: # read wav file
+            feature = Spectrogram(wavpath)
+        except:
+            _LOGGER.error("Unexpected error: %s", sys.exc_info()[0])
+            continue
 
-    if args.selections:
-        try:
-            selections = util.load_selections(args.selections)
+        try: # read selection table
+            selections = util.load_selections(selpath)
+            _LOGGER.info('Read selection table %s', selpath)
+            feature.selections_to_labels(selections)
         except FileNotFoundError:
-            _LOGGER.error('Could not read %s', args.selections)
-            return 1
+            _LOGGER.info('No selection table found.')
+            pass
 
-        feature.selections_to_labels(selections)
-        _LOGGER.info('Feature data nbytes: %f', feature._data.nbytes)
-
-    if args.output:
-        try:
-            pickle.dump(feature, args.output)
-            print('Wrote feature to', args.output.name)
+        try: # write feature object to file
+            pickle.dump(feature, outpath)
+            print('Wrote feature to', outpath)
         except IOError as e:
             _LOGGER.error(e)
+            
     return 0
 
 if __name__ == '__main__':

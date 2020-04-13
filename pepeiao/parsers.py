@@ -5,10 +5,10 @@ import pepeiao.util
 def make_feature_parser(parser=None):
     if parser is None:
         parser = argparse.ArgumentParser()
-    parser.add_argument('-o', '--output', type=argparse.FileType('wb'))
+    # parser.add_argument('-o', '--output', default=None,
+    #                     help='Directory to write features to')
     parser.add_argument('-v', '--verbose', action='store_true')
-    parser.add_argument('wav')
-    parser.add_argument('selections', nargs='?')
+    parser.add_argument('wav', nargs='+')
     parser.set_defaults(func='feature')
     return parser
 
